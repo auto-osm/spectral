@@ -37,14 +37,14 @@ void diffuse(vector<vector<double > > &data, double *eigVal)
     */
 
 
-    double alpha = 1000.0;
+    double alpha = 10000.0;
     printf("Using diffuse coords...\n");
     for(size_t i = 0; i < data.size();i++)
     {
         for(size_t j = 0; j < data[i].size(); j++ )
         {
             //printf("%f * %f\n",data[i][j], eigVal[j]);
-            data[i][j] = exp(-1.0 * data[i][j] * eigVal[j] * alpha); 
+            data[i][j] = data[i][j]*exp(-1.0 * eigVal[j] * alpha); 
         }
     }
 }
@@ -122,15 +122,9 @@ vector<vector<double > > spectralDecomposition(CSCMat mat, int nev)
 
     vector<vector<double > > dataPointsTrans = getDataPointsTrans(eigVec,nev,n);
     
-    //printf("datapoints\n");    
-    //print2DVecArray(dataPoints);
- 
-    //diffuse(dataPoints, eigVal); //use diffuse coordinates
-    //printf("diffuse\n");
-    //print2DVecArray(dataPoints);
+    //diffuse(dataPoints,eigVal);
 
     //print2DVecArray(dataPoints);
-    
 
     vecNormalize(dataPoints);
     
@@ -148,7 +142,8 @@ int main(int argc, char** argv)
     Mat sourceImage; 
     Mat segmentedImage; 
 
-   
+   //for(int f = 2; f < 15; f++)
+    //{
         sourceImage = loadDoubleImage(argv[1]);
         segmentedImage = Mat::zeros(sourceImage.size(),sourceImage.type());
         //printMatdouble(sourceImage);    
@@ -181,7 +176,7 @@ int main(int argc, char** argv)
         }
 
         //char str[15];
-        //sprintf(str, "%s", argv[1]);
+        //sprintf(str, "%s%d.png", argv[1],f);
 
 
         imshow("Source Image", sourceImage);
@@ -191,8 +186,8 @@ int main(int argc, char** argv)
 
         
 
-        imwrite("./out.bmp",segmentedImage);
- 
+        imwrite(./out.png,segmentedImage);
+    //}
 
     printf("Done!\n");
     waitKey(0);
