@@ -1,7 +1,6 @@
 #include "main.h"
 #define DEBUG
 
-
 Mat loadDoubleImage(const char* filename) {
     /*
     Returns double<0,1> Mat object loaded from the file
@@ -17,34 +16,28 @@ Mat loadDoubleImage(const char* filename) {
 
 void printMatdouble(Mat img) {
     /*
-    Prints Mat double object values to std output
+        Prints Mat double object values to std output
     */
-
-    for(int i = 0; i < img.rows; i++){
-        for(int j = 0; j < img.cols; j++){
+    for(int i = 0; i < img.rows; i++) {
+        for(int j = 0; j < img.cols; j++) {
             printf("%.2f ", img.at<double>(i,j));
         }
         printf("\n");
     }
 }
 
-
-void diffuse(vector<vector<double > > &data, double *eigVal) {
+void diffuse(vector<vector<double > > &data, double *eigVal, double t) {
     /*
-        DRAFT
+        Creation of diffuse map
     */
-    double alpha = 10000.0;
     printf("Using diffuse coords...\n");
-    for(size_t i = 0; i < data.size();i++)
-    {
-        for(size_t j = 0; j < data[i].size(); j++ )
-        {
+    for(size_t i = 0; i < data.size();i++) {
+        for(size_t j = 0; j < data[i].size(); j++ ) {
             //printf("%f * %f\n",data[i][j], eigVal[j]);
-            data[i][j] = data[i][j]*exp(-1.0 * eigVal[j] * alpha); 
+            data[i][j] = data[i][j]*exp(-1.0 * eigVal[j] * t); 
         }
     }
 }
-
 
 vector<vector<double > > getDataPoints(double* eigVec, int nev, int vecLen) {
     /*
@@ -57,11 +50,9 @@ vector<vector<double > > getDataPoints(double* eigVec, int nev, int vecLen) {
         for(int j = 0; j<vecLen; j++) {
             dataPoints[j][i] = eigVec[j+i*vecLen];
         }
-    }
-    
+    } 
     return dataPoints;
 }
-
 
 vector<vector<double > > getDataPointsTrans(double* eigVec, int nev, int vecLen) {
     /*
@@ -74,22 +65,14 @@ vector<vector<double > > getDataPointsTrans(double* eigVec, int nev, int vecLen)
             dataPoints[i][j] = eigVec[j+i*vecLen];
         }
     }
-
     return dataPoints;
 }
 
-
 vector<vector<double > > spectralDecomposition(CSCMat mat, int nev) {
     /*
-    Compute Eigenvectors and Eigenvalues of lower Laplacian matrix 
-
-    WHAT IS PROBLEM DIMENSION?
-    WHAT IS MAXIMUM NUMBER EIGEN VALUES ?!?!
-    */
-    
-
+        Compute Eigenvectors and Eigenvalues of lower Laplacian matrix 
+    */    
     int n = mat.pCol.size() -1;           // dimension (number of rows or cols od similiar matrix)
-    //int nev = 3;      //number of requested eigenvectors/eigenvalues
     int nconv;       // number of "converged" eigenvalues.
     int nnz = mat.val.size();
     
@@ -112,9 +95,7 @@ vector<vector<double > > spectralDecomposition(CSCMat mat, int nev) {
     
     Solution(nconv, n, nnz, &mat.val[0], &mat.iRow[0], &mat.pCol[0], uplo, eigVal, eigVec);
  
-    
     vector<vector<double > > dataPoints = getDataPoints(eigVec,nev,n); // unnormalized data point for clustering eigenvectors in columns
-
     vector<vector<double > > dataPointsTrans = getDataPointsTrans(eigVec,nev,n);
     
     //diffuse(dataPoints,eigVal);
@@ -126,63 +107,70 @@ vector<vector<double > > spectralDecomposition(CSCMat mat, int nev) {
     return dataPoints;
 }
 
-
-
 int main(int argc, char** argv) {
-    int nev = atoi(argv[2]); // number of required EigenVal/Vecs
+    char* input_file_path = argv[1];
 
-    printf("nev= %d\n",nev);
+    int max_nev = atoi(argv[2]); // number of required EigenVal/Vecs
+
+    double sigma_affmat = 0.05;
+    double sigma_meanshift = 0.05;
 
     Mat sourceImage; 
-    Mat segmentedImage; 
+    Mat segmentedImage;
 
-   //for(int f = 2; f < 15; f++)
-    //{
-        sourceImage = loadDoubleImage(argv[1]);
-        segmentedImage = Mat::zeros(sourceImage.size(),sourceImage.type());
+    time_t start_time;
+    time_t current_time;
+    time_t end_time;
+
+    char output_filename[100];
+    FILE* log = fopen("./log", "a");
+    for(int nev = 2; nev < max_nev; nev++) {
+        start_time = time(NULL);
+        fprintf(log,"[%lu-%s]\nnev=%d, sigma_affmat=%f, sigma_meanshift=%f", start_time, basename(input_file_path), nev, sigma_affmat, sigma_meanshift);
+        char output_filename[100];
+        sprintf(output_filename, "./out/%lu-%s", start_time, basename(input_file_path));
+        printf("%s\n", output_filename);
+
+        sourceImage = loadDoubleImage(input_file_path);
+        segmentedImage = Mat::zeros(sourceImage.size(), sourceImage.type());
         //printMatdouble(sourceImage);    
 
         //double** affMatrix = get2DdoubleAffinityMatrix(sourceImage);
         //print2DdoubleArray(affMatrix, sourceImage.rows*sourceImage.cols,sourceImage.rows*sourceImage.cols);
 
-
-        CSCMat affinityMat = getCSCAffinityMatrix(sourceImage);
+        CSCMat affinityMat = getCSCAffinityMatrix(sourceImage, sigma_affmat);
         //printCSCMatrix(affinityMat);
-
         CSCMat laplacianMat = getCSCNormalizedLaplacianMatrix(affinityMat);
         //printCSCMatrix(laplacianMat);
-        
-        
-        vector<vector<double > > dataPoints = spectralDecomposition(laplacianMat,nev);
+        current_time = time(NULL);
+        vector<vector<double > > dataPoints = spectralDecomposition(laplacianMat, nev);
+        fprintf(log,"spectral decomposition time: %lu\n", time(NULL)-current_time);
         //print2DVecArray(dataPoints);
 
-
         //vector<int > clusters = k_means(dataPoints,k);
-        vector<int > clusters = meanshiftFast(dataPoints,sourceImage.rows,sourceImage.cols);
+        current_time = time(NULL);
+        vector<int > clusters = meanshiftFast(dataPoints, sourceImage.rows, sourceImage.cols, sigma_meanshift); 
+        fprintf(log,"clustering time: %lu\n", time(NULL)-current_time);
 
-        
-        for(int i = 0; i<segmentedImage.rows; i++) {
-            for(int j = 0; j< segmentedImage.cols; j++) {       
+        for(int i = 0; i < segmentedImage.rows; i++) {
+            for(int j = 0; j < segmentedImage.cols; j++) {       
                 segmentedImage.at<double>(i,j) = ((clusters[j+i*segmentedImage.cols]*40)%256)/255.0;
             }
         }
 
         //char str[15];
         //sprintf(str, "%s%d.png", argv[1],f);
-
-
-        imshow("Source Image", sourceImage);
-        imshow("Segmented Image", segmentedImage);
+      
+        //imshow("Source Image", sourceImage);
+        //imshow("Segmented Image", segmentedImage);
         segmentedImage.convertTo(segmentedImage, CV_8U, 255.0);
+        fprintf(log, "Total time: %lu\n\n", time(NULL) - start_time);
+        imwrite(output_filename, segmentedImage);
+        sleep(1);
+    }
 
-
-        
-
-        imwrite("./out.png",segmentedImage);
-    //}
-
+    fclose(log);
     printf("Done!\n");
     waitKey(0);
 	return 0;
-  
 }

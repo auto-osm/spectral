@@ -4,10 +4,7 @@
 #include <vector>
 using namespace std;
 
-
-
-struct CSCMat
-{
+struct CSCMat {
     /*
     Compressed sparse column (CSC or CCS) Matrix structure
     */
@@ -15,8 +12,6 @@ struct CSCMat
     vector<int> iRow;
     vector<int> pCol;
 };
-
-
 
 void printCSCMatrix(CSCMat mat);
 

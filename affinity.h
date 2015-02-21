@@ -13,11 +13,11 @@ using namespace cv;
 #include "math.h"
 
 
-double affinityFunction(double val1, double val2);
+double affinityFunction(double val1, double val2, double sigma);
 
-CSCMat getCSCAffinityMatrix(Mat mat);
+CSCMat getCSCAffinityMatrix(Mat mat, double sigma);
 
-double** get2DdoubleAffinityMatrix(Mat mat);
+double** get2DdoubleAffinityMatrix(Mat mat, double sigma);
 
 void print2DdoubleArray(double** arr, int rows, int cols);
 

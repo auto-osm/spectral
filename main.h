@@ -14,6 +14,10 @@ using namespace cv;
 #include "/home/amic/Dropbox/arpack++/include/asymsol.h"
 
 
+#include <stdio.h>
+#include <time.h>
+#include <unistd.h>
+
 
 Mat loaddoubleImage(const char* filename);
 
