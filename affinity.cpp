@@ -51,7 +51,7 @@ CSCMat getCSCAffinityMatrix(Mat mat, double sigma) {
     return affinityMatrix;
 }
 
-double** get2DdoubleAffinityMatrix(Mat mat, double sigma) {
+double** get2DDoubleAffinityMatrix(Mat mat, double sigma) {
     /*
         Returns image affinity matrix 2D double** array [mat.rows * mat.cols][mat.rows * mat.cols] - not suitabla for large inputs, only for experimental purposes
         Affinity defined at double affinityFunction(double val1, double val2)
@@ -97,14 +97,12 @@ double** get2DdoubleAffinityMatrix(Mat mat, double sigma) {
     return affinityMatrix;
 }
 
-void print2DdoubleArray(double** arr, int rows, int cols) {
+void print2DDoubleArray(double** arr, int rows, int cols) {
     /*
         Prints 2D double** array to std output
     */
-    for(int i = 0; i < rows; i++)
-    {
-        for(int j = 0; j < cols; j++)
-        {
+    for(int i = 0; i < rows; i++) {
+        for(int j = 0; j < cols; j++) {
             if(arr[i][j] != 0.0)
                 printf( GREEN "%.1f " RESETCOLOR, arr[i][j]);
             else
@@ -131,4 +129,15 @@ void print2DdoubleArray(double** arr, int rows, int cols) {
             printf(",");
     }
     printf("]");*/
+}
+
+void save2DDoubleArray(char* filename, double** arr, int rows, int cols) {
+    FILE* f = fopen(filename,"w");
+    for(int i = 0; i < rows; i++) {
+        for(int j = 0; j < cols; j++) {
+                fprintf(f, "%.1f ", arr[i][j]);
+        }
+        fprintf(f, "\n");
+    }
+    fclose(f);
 }

@@ -17,8 +17,9 @@ double affinityFunction(double val1, double val2, double sigma);
 
 CSCMat getCSCAffinityMatrix(Mat mat, double sigma);
 
-double** get2DdoubleAffinityMatrix(Mat mat, double sigma);
+double** get2DDoubleAffinityMatrix(Mat mat, double sigma);
 
-void print2DdoubleArray(double** arr, int rows, int cols);
+void print2DDoubleArray(double** arr, int rows, int cols);
+void save2DDoubleArray(char* filename, double** arr, int rows, int cols);
 
 #endif

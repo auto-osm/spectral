@@ -28,7 +28,7 @@ void printMatdouble(Mat img) {
 
 void diffuse(vector<vector<double > > &data, double *eigVal, double t) {
     /*
-        Creation of diffuse map
+        Creates diffuse map
     */
     printf("Using diffuse coords...\n");
     for(size_t i = 0; i < data.size();i++) {
@@ -41,7 +41,7 @@ void diffuse(vector<vector<double > > &data, double *eigVal, double t) {
 
 vector<vector<double > > getDataPoints(double* eigVec, int nev, int vecLen) {
     /*
-        Create data points from k eigenvectors x stacked in to the COLUMNS M=[x0,...,xk]
+        Create data points from k eigenvectors u stacked in to the COLUMNS M=[u1,...,uk]
         Data points created from the rows of M and normalized ex dataPoint[0] - first k-dimensional point for clustering    
     */
     vector<vector<double > > dataPoints(vecLen, vector<double> (nev));
@@ -56,7 +56,7 @@ vector<vector<double > > getDataPoints(double* eigVec, int nev, int vecLen) {
 
 vector<vector<double > > getDataPointsTrans(double* eigVec, int nev, int vecLen) {
     /*
-        Create data points from k eigenvectors x stacked in to the ROWS       
+        Create data points from k eigenvectors u stacked in to the ROWS       
     */
     vector<vector<double > > dataPoints(nev, vector<double> (vecLen));
 
@@ -96,14 +96,15 @@ vector<vector<double > > spectralDecomposition(CSCMat mat, int nev) {
     Solution(nconv, n, nnz, &mat.val[0], &mat.iRow[0], &mat.pCol[0], uplo, eigVal, eigVec);
  
     vector<vector<double > > dataPoints = getDataPoints(eigVec,nev,n); // unnormalized data point for clustering eigenvectors in columns
-    vector<vector<double > > dataPointsTrans = getDataPointsTrans(eigVec,nev,n);
+    //vector<vector<double > > dataPointsTrans = getDataPointsTrans(eigVec,nev,n);
     
     //diffuse(dataPoints,eigVal);
 
     //print2DVecArray(dataPoints);
 
+    vecSave2DArray("eigvec.txt", dataPoints);
     vecNormalize(dataPoints);
-    
+    vecSave2DArray("eigvecnorm.txt", dataPoints);
     return dataPoints;
 }
 
@@ -135,13 +136,13 @@ int main(int argc, char** argv) {
         segmentedImage = Mat::zeros(sourceImage.size(), sourceImage.type());
         //printMatdouble(sourceImage);    
 
-        //double** affMatrix = get2DdoubleAffinityMatrix(sourceImage);
-        //print2DdoubleArray(affMatrix, sourceImage.rows*sourceImage.cols,sourceImage.rows*sourceImage.cols);
+        double** affMatrix = get2DDoubleAffinityMatrix(sourceImage, sigma_affmat);
+        save2DDoubleArray("affmat.txt", affMatrix, sourceImage.rows*sourceImage.cols, sourceImage.rows*sourceImage.cols);
 
         CSCMat affinityMat = getCSCAffinityMatrix(sourceImage, sigma_affmat);
-        //printCSCMatrix(affinityMat);
-        CSCMat laplacianMat = getCSCNormalizedLaplacianMatrix(affinityMat);
-        //printCSCMatrix(laplacianMat);
+        printCSCMatrix(affinityMat);
+        CSCMat laplacianMat = getCSCLaplacianRW(affinityMat);
+        printCSCMatrix(laplacianMat);
         current_time = time(NULL);
         vector<vector<double > > dataPoints = spectralDecomposition(laplacianMat, nev);
         fprintf(log,"spectral decomposition time: %lu\n", time(NULL)-current_time);

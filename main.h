@@ -10,6 +10,7 @@ using namespace cv;
 #include "laplacian.h"
 #include "spectral.h"
 #include "meanshift.h"
+#include "vecops.h"
 #include "/home/amic/Dropbox/arpack++/include/areig.h"
 #include "/home/amic/Dropbox/arpack++/include/asymsol.h"
 

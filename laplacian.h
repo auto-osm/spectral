@@ -7,14 +7,11 @@
 using namespace std;
 
 #include "cscmatrix.h"
-
+#include "vecops.h"
 
 vector<double> getCSCMatrixDiagonal(CSCMat mat);
-
-
 CSCMat getCSCLaplacianMatrix(CSCMat mat);
-
-
-CSCMat getCSCNormalizedLaplacianMatrix(CSCMat mat);
+CSCMat getCSCLaplacianSym(CSCMat mat);
+CSCMat getCSCLaplacianRW(CSCMat aff_mat);
 
 #endif

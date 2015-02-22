@@ -14,4 +14,3 @@ void printCSCMatrix(CSCMat mat) {
         printf("%d ",mat.pCol[i]);
     printf("\n");
 }
-
