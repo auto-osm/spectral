@@ -67,27 +67,32 @@ CSCMat getCSCLaplacianSym(CSCMat mat) {
 
 CSCMat getCSCLaplacianRW(CSCMat aff_mat) {
     /*
-        Normalized symetrical laplacian matrix L rw = I - D^-1/2 * A * D^-1/2
+        IN PROGRESS NOT SYMETRICAL
+        Normalized symetrical laplacian matrix L rw = I - D^-1/2 * A 
     */
     printf("Creating normalized symetric laplacian matrix L RW = D^-1 * L");
     CSCMat laplacian = aff_mat;
     vector<double> diagonal =  getCSCMatrixDiagonal(laplacian);
 
-    printf("!!!!!!!");
-    vecPrint(diagonal);
-
-
     int last_ind = -1;
-    int row_ptr = 0;
+    int row_ind = 0;
     for(size_t i = 0; i < laplacian.val.size(); i++) {
-        if(laplacian.pCol[i] < last_ind)
+        /*if(laplacian.rowInd[i] < last_ind) {
             row_ptr++;
+        }
         last_ind = laplacian.pCol[i];
         if(laplacian.val[i] == -1.0) {
             laplacian.val[i] = 1.0;
         } else {
+            printf("%d, %f / %f\n",row_ptr, laplacian.val[i],diagonal[row_ptr]);           
             laplacian.val[i] = laplacian.val[i] / diagonal[row_ptr];
-        }
+        }*/
+
+        if(laplacian.val[i] == -1.0) {
+            laplacian.val[i] = 1.0;
+        } else {
+            laplacian.val[i] = -1.0 * laplacian.val[i] / diagonal[laplacian.iRow[i]];
+        } 
     }
     return laplacian;
 }

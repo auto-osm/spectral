@@ -2,27 +2,105 @@
 #define DEBUG_MEANSHIFT
 
 double meanshiftKernelFunction(vector<double > &v1, vector<double > &v2, double sigma) {
-    double dist = vecEuclidDist(v1,v2);
-    double res = gaussianFunction(dist,sigma);
+    double dist = vecEuclidDist(v1, v2);
+    double res = gaussianFunction(dist, sigma);
     return res;
 }
 
-vector<int> meanshift(vector<vector<double > > &data, double sigma) {    
+vector<int> cluster(vector<vector<double > > &means, double threshold) {
+    /*
+        returns vector(size = number of pixels) eg:
+        p1: Seg1
+        p2: Seg2
+        p3: Seg1
+        p4: Seg1
+    */
+    printf("Creating clusters\n");
+    vector<vector<double > > centroids;
+    vector<int> clusters(means.size(), 0);
+    double distance;
+    double segTreshold = threshold;//0.6*sqrt(oldMeans[0].size());
+    double distMin = 1000.0;
+    bool found;
+    for(size_t i = 0; i < means.size(); i++) {
+        found = false;
+        distMin=1000.0;
+        for(size_t j = 0; j < centroids.size(); j++) {
+            distance = vecEuclidDist(means[i], centroids[j]);
+            //printf("%f ", distance);
+            if(distance < segTreshold && distance < distMin) {
+                found = true;
+                clusters[i] = j;
+                distMin = distance;
+            }
+
+        }
+        if(!found) {
+            centroids.push_back(means[i]);
+            clusters[i] = centroids.size()-1;
+        }
+    }
+
+    printf("Segmented into %d clusters..\n", (int)centroids.size());
+    return clusters;
+}
+
+vector<vector<int > > cluster2(vector<vector<double > > &means, double threshold) {
+    /*
+        returns vector of segments (vector of pixels indexes)
+        Seg1: p1, p3, p4
+        Seg2: p2
+    */
+    vector<vector<double > > centroids;
+    vector<vector<int > > clusters;
+    int closest_mean = -1;
+    double distance;
+    double segTreshold = threshold;//0.6*sqrt(oldMeans[0].size());
+    double distMin = 1000.0;
+    bool found;
+    for(size_t i = 0; i < means.size(); i++) {
+        found = false;
+        distMin=1000.0;
+        for(size_t j = 0; j < centroids.size(); j++) {
+            distance = vecEuclidDist(means[i], centroids[j]);
+            //printf("%f ", distance);
+            if(distance < segTreshold && distance < distMin) {
+                found = true;
+                closest_mean = j;
+                distMin = distance;
+            }
+        }
+        if(found) {
+            clusters[closest_mean].push_back(i);
+        } else {
+            vector<int> vec;
+            clusters.push_back(vec);
+            clusters.back().push_back(i);
+            centroids.push_back(means[i]);
+        }
+    }
+    printf("Segmented into %d clusters..\n", (int)clusters.size());
+    return clusters;
+}
+    
+vector<vector<double > > meanshift(vector<vector<double > > &data, double sigma) {
+    /*Returns converged meanshift positions*/
+    printf("Meanshift....\n");
     int maxIter = 20;
     int iter;
     vector<int> clusters(data.size(),0);
 
     vector<vector<double > > oldMeans = data;
-    vector<vector<double > > newMeans(data.size(),vector<double >(data[0].size(),0.0));
+    vector<vector<double > > newMeans(data.size(),vector<double >(data[0].size(), 0.0));
 
     double treshold = 0.001;
     double distance;
   
     double weight;
     double sumWeight;
-    printf("Meanshift clustering ...");
+    printf("Meanshift clustering ...\n");
      
-    for(size_t i = 0; i< oldMeans.size();i++) {
+    for(size_t i = 0; i < oldMeans.size();i++) {
         iter = 0;
         //printf("\n");
         do { 
@@ -31,7 +109,7 @@ vector<int> meanshift(vector<vector<double > > &data, double sigma) {
             fill(newMeans[i].begin(), newMeans[i].end(), 0.0);
             
             for(size_t j = 0; j < data.size(); j++) {
-                if((weight = meanshiftKernelFunction(oldMeans[i], data[j], sigma)) != 0.0) {
+                if((weight = meanshiftKernelFunction(oldMeans[i], data[j], sigma)) > 0.05) {
                     vector<double> scaledVec = vecGetScale(data[j], weight);
                     vecSum(newMeans[i],scaledVec);
                     sumWeight += weight;
@@ -47,9 +125,10 @@ vector<int> meanshift(vector<vector<double > > &data, double sigma) {
             //printf("#");
         }while(distance > treshold && iter < maxIter);//zastaveni
     }
-
+    printf("Done\n");
+    return oldMeans;
 //print2DVecArray(oldMeans);
-    vector<vector<double > > means;
+    /*vector<vector<double > > means;
     double segTreshold = 1.0;//0.6*sqrt(oldMeans[0].size());
     double distMin = 1000.0;
     bool found = false;    
@@ -75,12 +154,12 @@ vector<int> meanshift(vector<vector<double > > &data, double sigma) {
 
     printf("Segmented into %d clusters..\n",(int)means.size());
 
-    return clusters;
+    return clusters;*/
 }
 
-
-vector<int> meanshiftFast(vector<vector<double > > &data, int imgHeight, int imgWidth, double sigma) {
-    int windowRadius = 5;
+/* buggy ;)*/
+vector<vector<double > > meanshiftFast(vector<vector<double > > &data, int imgHeight, int imgWidth, double sigma) {
+    int windowRadius = 20;
     
     int maxIter = 20;
     int iter;
@@ -129,7 +208,7 @@ vector<int> meanshiftFast(vector<vector<double > > &data, int imgHeight, int img
     }
 
 //print2DVecArray(oldMeans);
-    vector<vector<double > > means;
+/*    vector<vector<double > > means;
     double segTreshold = 1.0;//0.6*sqrt(oldMeans[0].size());
     double distMin = 1000.0;
     bool found = false;    
@@ -155,8 +234,11 @@ vector<int> meanshiftFast(vector<vector<double > > &data, int imgHeight, int img
 
     printf("Segmented into %d clusters..\n",(int)means.size());
 
-    return clusters;
+    return clusters;*/
+    return oldMeans;
 }
+
+
 
 
 

@@ -11,6 +11,7 @@ using namespace std;
 #include "math.h"
 
 void vecPrint(vector<double> &v);
+void vecPrint(vector<int> &v);
 void vecPrint2DArray(vector<vector<double > > &vec2D);
 
 void vecSave(char* filename, vector<double > &v);

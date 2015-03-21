@@ -1,6 +1,7 @@
 #include "cscmatrix.h"
 
 void printCSCMatrix(CSCMat mat) {
+    printf("NNZ: %lu", mat.val.size());
     printf("\nvalues:\n");
     for(size_t i = 0; i < mat.val.size(); i++)
         printf("%.2f ",mat.val[i]);

@@ -137,6 +137,13 @@ void vecPrint(vector<double > &v) {
     printf("\n");
 }
 
+void vecPrint(vector<int> &v) {
+    for(size_t i = 0; i < v.size(); i++) {
+        printf("%d ", v[i]);
+    }
+    printf("\n");
+}
+
 void vecPrint2DArray(vector<vector<double > > &vec2D) {  
     printf("Printing 2D vec<vec<double>> array...\n");
     for(size_t i = 0; i < vec2D.size() ; i++) {
