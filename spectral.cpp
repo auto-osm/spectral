@@ -1,4 +1,0 @@
-#include "spectral.h"
-
-
-

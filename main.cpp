@@ -3,9 +3,9 @@
 
 Mat loadDoubleImage(const char* filename) {
     /*
-    Returns double<0,1> Mat object loaded from the file
+        Returns double<0,1> Mat object loaded from the file
     */
-    Mat  imageUchar, imageDouble;
+    Mat imageUchar, imageDouble;
     imageUchar = imread(filename, 0);  
     imageUchar.convertTo(imageDouble, CV_64F, 1/255.0);
     //imshow("Src Image", imagedouble);
@@ -122,22 +122,20 @@ void visualiseSegments(Mat &output_img, vector<vector<int > > &clusters) {
     }
 }
 
+void arg_error() {
+    printf("Use following syntax to run algorithm:\n scisa -f file_path [-sm val -sa val -t val -n val]\n");
+    exit(-1);
+}
+
 int main(int argc, char** argv) {
-    double sigma_affmat = 0.03;
-    double sigma_meanshift;
-    double diffuse_t = 0.0;
-    double t_arr[] = {1000.0,10000.0};
-    FILE* log = fopen("./log-synimg-noise", "a");
-    for(int t = 0; t < 2; t++) {
-    diffuse_t =  t_arr[t];
-    double sigma_affmat = 0.03;
-    for(int sa = 0; sa < 3; sa++) {
-    sigma_meanshift = 0.1; 
-    for(int sm = 0; sm < 4; sm++) { 
-    char* input_file_path = argv[1];
-
-    int max_nev = atoi(argv[2]); // number of required EigenVal/Vecs
-
+    FILE* log = fopen("./logs/log", "a");
+    //default configuration
+    char* input_file_path;
+    char output_filename[100];
+    double sigma_meanshift = 0.4;
+    double sigma_affmat = 0.005;
+    double diffuse_t = 5000.0;
+    int nev = 20;
 
     Mat source_img; 
     Mat output_img;
@@ -146,67 +144,88 @@ int main(int argc, char** argv) {
     time_t current_time;
     time_t end_time;
 
-    char output_filename[100];
-    for(int nev = 2; nev <= max_nev; nev++) {
-        start_time = time(NULL);
-        fprintf(log,"[%lu-%s]\nnev=%d, sigma_affmat=%f, sigma_meanshift=%f, diffuse_t=%f", start_time, basename(input_file_path), nev, sigma_affmat, sigma_meanshift, diffuse_t);
-        char output_filename[100];
-        sprintf(output_filename, "./out/synt_noise/%lu_sa%d_sm%d_nev%d_difft%d-%s", start_time, (int)(sigma_affmat*1000),(int)(sigma_meanshift*1000), nev,(int)diffuse_t, basename(input_file_path));
-        printf("%s\n", output_filename);
-
-        source_img = loadDoubleImage(input_file_path);
-        output_img = Mat::zeros(source_img.size(), CV_8UC3);
-        //printMatdouble(source_img);    
-
-        //double** affMatrix = get2DDoubleAffinityMatrix(source_img, sigma_affmat);
-        //save2DDoubleArray("affmat.txt", affMatrix, source_img.rows*source_img.cols, source_img.rows*source_img.cols);
-
-        CSCMat affinityMat = getCSCAffinityMatrix(source_img, sigma_affmat);
-        //printCSCMatrix(affinityMat);
-
-        CSCMat laplacianMat = getCSCLaplacianSym(affinityMat);
-        //printCSCMatrix(laplacianMat);
-
-        current_time = time(NULL);
-        vector<vector<double > > dataPoints = spectralDecomposition(laplacianMat, nev, diffuse_t);
-        fprintf(log,"spectral decomposition time: %lu\n", time(NULL) - current_time);
-        //print2DVecArray(dataPoints);
-
-        //vector<int > clusters = k_means(dataPoints,k);
-        current_time = time(NULL);
-        //vector<int > clusters = meanshiftFast(dataPoints, source_img.rows, source_img.cols, sigma_meanshift); 
-        vector<vector<double > > datameans = meanshift(dataPoints, sigma_meanshift); 
-        //vecPrint2DArray(datameans);
-        //printf("%d\n",datameans.size());
-        fprintf(log,"clustering time: %lu\n", time(NULL)-current_time);
-        //vector<int> clusters = cluster(datameans, 1.0);        
-        vector<vector<int > > clusters = cluster2(datameans, 1.0);        
-        //printf("%d\n",clusters.size());
-        /*for(int i = 0; i < segmentedImage.rows; i++) {
-            for(int j = 0; j < segmentedImage.cols; j++) {       
-                segmentedImage.at<double>(i,j) = ((clusters[j+i*segmentedImage.cols]*40)%256)/255.0;
-            }
-        }*/
-
-        
-        visualiseSegments(output_img, clusters);
-        //char str[15];
-        //sprintf(str, "%s%d.png", argv[1],f);
-      
-        //imshow("Source Image", source_img);
-        //imshow("Segmented Image", segmentedImage);
-        
-
-        //segmentedImage.convertTo(segmentedImage, CV_8U, 255.0);
-        fprintf(log, "Total time: %lu\n\n", time(NULL) - start_time);
-        imwrite(output_filename, output_img);
-        sleep(1);
+    //parse command line arguments
+    for(int i = 0; i < argc; i++) {
+        if(strcmp(argv[i],"-f")==0) {
+	        i++;
+	        input_file_path = argv[i];
+            printf("-f: %s\n", input_file_path);
+	    } 
+        if(strcmp(argv[i],"-sa")==0) {
+	        i++;
+	        sigma_affmat = atof(argv[i]);
+            printf("-sa: %f\n", sigma_affmat);
+	    }
+        if(strcmp(argv[i],"-sm")==0) {
+	        i++;
+	        sigma_meanshift = atof(argv[i]);
+            printf("-sm: %f\n", sigma_meanshift);
+	    }
+        if(strcmp(argv[i],"-t")==0) {
+	        i++;
+	        diffuse_t = atof(argv[i]);
+            printf("-t: %f\n", diffuse_t);
+	    }
+	    if(strcmp(argv[i],"-n")==0) {
+	        i++;
+	        nev = atoi(argv[i]);
+            printf("-n: %d\n", nev);
+	    }
     }
-    sigma_meanshift += 0.1;
+    if(access(input_file_path, F_OK) == -1) {
+        printf("Invalid input file path: %s\n", input_file_path);
+        arg_error();
     }
-    sigma_affmat += 0.01;
-    }
-    }
+
+    printf("Args parsing completed!\n");
+    printf("%s %s -sa %f -sm %f -t %f -n %d\n", argv[0], input_file_path, sigma_affmat, sigma_meanshift, diffuse_t, nev);
+
+    start_time = time(NULL);
+
+    /* Load image data */
+    source_img = loadDoubleImage(input_file_path);
+    output_img = Mat::zeros(source_img.size(), CV_8UC3);
+    //printMatdouble(source_img);    
+
+
+    /* Log record */
+    fprintf(log,"[%lu-%s]\nnev=%d, sigma_affmat=%f, sigma_meanshift=%f, diffuse_t=%f", start_time, basename(input_file_path), nev, sigma_affmat, sigma_meanshift, diffuse_t);
+    sprintf(output_filename, "./out/%lu_sa%d_sm%d_nev%d_difft%d-%s", start_time, (int)(sigma_affmat*1000),(int)(sigma_meanshift*1000), nev,(int)diffuse_t, basename(input_file_path));
+
+    /* Compute affinity matrix */
+    CSCMat affinityMat = getCSCAffinityMatrix(source_img, sigma_affmat);
+    //printCSCMatrix(affinityMat);
+
+    /* Compute laplacian matrix */
+    CSCMat laplacianMat = getCSCLaplacianSym(affinityMat);
+    //printCSCMatrix(laplacianMat);
+
+    current_time = time(NULL);
+    
+    /* Compute eigen vectors*/
+    vector<vector<double > > dataPoints = spectralDecomposition(laplacianMat, nev, diffuse_t);
+    //print2DVecArray(dataPoints);
+
+    /* Log record */
+    fprintf(log,"Spectral decomposition time: %lu\n", time(NULL) - current_time);
+
+    current_time = time(NULL);
+    
+    /*Compute clusters*/
+    vector<vector<double > > datameans = meanshift(dataPoints, sigma_meanshift); 
+    //vecPrint2DArray(datameans);
+    
+    /* Log record */
+    fprintf(log,"Clustering time: %lu\n", time(NULL) - current_time);
+    vector<vector<int > > clusters = cluster2(datameans, 1.0);
+
+    /* Colorize segments*/    
+    visualiseSegments(output_img, clusters);
+    
+    /* Log record */
+    fprintf(log, "Total time: %lu\n\n", time(NULL) - start_time);
+
+    imwrite(output_filename, output_img);
 
     fclose(log);
     printf("Done!\n");

@@ -8,11 +8,10 @@ using namespace cv;
 
 #include "affinity.h"
 #include "laplacian.h"
-#include "spectral.h"
 #include "meanshift.h"
 #include "vecops.h"
-#include "/home/amic/Dropbox/arpack++/include/areig.h"
-#include "/home/amic/Dropbox/arpack++/include/asymsol.h"
+#include "arpack++/include/areig.h"
+#include "arpack++/include/asymsol.h"
 
 
 #include <stdio.h>
